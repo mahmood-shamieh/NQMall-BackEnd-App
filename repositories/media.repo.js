@@ -27,6 +27,7 @@ class MediaRepo {
     }
     static async addMedia(body) {
         try {
+            console.log(body);
             const temp = await media.create(body);
             if (temp) {
                 return { ...temp.dataValues };

@@ -1,6 +1,7 @@
 const brand = require("../models/brand.model")
 
 const brandRepo = require('../repositories/brand.repo')
+const SystemUtil = require("../util/system")
 
 
 
@@ -12,7 +13,10 @@ class BrandController {
 
         if (req.files.length) {
             body.LogoSize = req.files[0].size;
-            body.LogoUrl = req.files[0].path.split("\\").slice(1).join("\\");
+            body.LogoUrl =
+            SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+          ? req.files[0].path.split("/").slice(1).join("\\")
+          : req.files[0].path.split("\\").slice(1).join("\\");
         }
         const addBrand = await brandRepo.addBrand(body);
         if (addBrand) {
