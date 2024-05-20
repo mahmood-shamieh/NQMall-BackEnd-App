@@ -2,7 +2,7 @@ const categoryRepo = require("../repositories/category.repo");
 const SystemUtil = require("../util/system")
 class CategoryController {
   static async create(req, res) {
-    
+
     const body = req.body;
     if (req.files.length) {
       body.ImageSize = req.files[0].size;
@@ -88,7 +88,9 @@ class CategoryController {
 
     if (req.files.length) {
       body.ImageSize = req.files[0].size;
-      body.ImageURL = req.files[0].path.split("\\").slice(1).join("\\");
+      body.ImageURL =
+        SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+          ? req.files[0].path.split("/").slice(1).join("\\") : req.files[0].path.split("\\").slice(1).join("\\");
     }
     const updatedCategory = await categoryRepo.updateCategoryDetails(body);
     if (updatedCategory) {

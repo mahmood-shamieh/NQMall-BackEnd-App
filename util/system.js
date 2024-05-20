@@ -1,3 +1,4 @@
+const os = require('os');
 class SystemUtil {
   static OS_TYPE = {
     WINDOWS: "Windows",
@@ -8,7 +9,7 @@ class SystemUtil {
     UNKNOWN: "Unknown OS",
   };
   static detectOS() {
-    let platform = navigator.platform.toLowerCase();
+    let platform = os.platform();
 
     if (platform.includes("win")) {
       return this.OS_TYPE.WINDOWS;

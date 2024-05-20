@@ -1,5 +1,6 @@
 const { where } = require('sequelize');
 const attribute = require('../models/attribute.model')
+const SystemUtil = require("../util/system")
 
 
 function isPlaceHolderFile(path) {
@@ -18,21 +19,21 @@ function isPlaceHolderFile(path) {
 class AttributeRepo {
     static async getProductAttributes(productId) {
         try {
-        const productAttributes = await attribute.findAll({
-            where: {
-                productId: productId
-            }
-        });
-        if (productAttributes && productAttributes.length) {
-            const data = new Array();
-            productAttributes.forEach(element => {
-                data.push({ ...element.dataValues });
+            const productAttributes = await attribute.findAll({
+                where: {
+                    productId: productId
+                }
             });
-            return data;
-        }
-        else {
-            return false;
-        }
+            if (productAttributes && productAttributes.length) {
+                const data = new Array();
+                productAttributes.forEach(element => {
+                    data.push({ ...element.dataValues });
+                });
+                return data;
+            }
+            else {
+                return false;
+            }
         } catch (error) {
             return null;
         }
@@ -54,7 +55,8 @@ class AttributeRepo {
             const haveNotHoverImage = isPlaceHolderFile(filesAr[index].path)
             localItemsAr.push({
                 "item": element,
-                "hoverImage": haveNotHoverImage ? null : filesAr[index].path.split('\\').slice(1).join('\\'),
+                "hoverImage": haveNotHoverImage ? null : SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                    ? filesAr[index].path.split("/").slice(1).join("\\") : filesAr[index].path.split('\\').slice(1).join('\\'),
             });
 
         }
@@ -63,7 +65,8 @@ class AttributeRepo {
             const haveNotHoverImage = isPlaceHolderFile(filesEn[index].path)
             localItemsEn.push({
                 "item": element,
-                "hoverImage": haveNotHoverImage ? null : filesEn[index].path.split('\\').slice(1).join('\\'),
+                "hoverImage": haveNotHoverImage ? null : SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                    ? filesEn[index].path.split("/").slice(1).join("\\") : filesEn[index].path.split('\\').slice(1).join('\\'),
             });
 
         }
@@ -100,8 +103,10 @@ class AttributeRepo {
                 const element = itemsAr[index];
                 const haveNotHoverImage = isPlaceHolderFile(filesAr[index].path);
                 localItemsAr.push({
-                    "item": itemsAr[index].path.split('\\').slice(1).join('\\'),
-                    "hoverImage": haveNotHoverImage ? null : filesAr[index].path.split('\\').slice(1).join('\\'),
+                    "item": SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                        ? itemsAr[index].path.split("/").slice(1).join("\\") : itemsAr[index].path.split('\\').slice(1).join('\\'),
+                    "hoverImage": haveNotHoverImage ? null : SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                        ? filesAr[index].path.split("/").slice(1).join("\\") : filesAr[index].path.split('\\').slice(1).join('\\'),
                 });
             }
         if (itemsEn)
@@ -109,8 +114,10 @@ class AttributeRepo {
                 const element = itemsEn[index];
                 const haveNotHoverImage = isPlaceHolderFile(filesEn[index].path);
                 localItemsEn.push({
-                    "item": itemsEn[index].path.split('\\').slice(1).join('\\'),
-                    "hoverImage": haveNotHoverImage ? null : filesEn[index].path.split('\\').slice(1).join('\\'),
+                    "item":SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                    ? itemsEn[index].path.split("/").slice(1).join("\\") :  itemsEn[index].path.split('\\').slice(1).join('\\'),
+                    "hoverImage": haveNotHoverImage ? null :SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
+                    ? filesEn[index].path.split("/").slice(1).join("\\") :  filesEn[index].path.split('\\').slice(1).join('\\'),
                 });
             }
         insertData['ContentAr'] = localItemsAr;
