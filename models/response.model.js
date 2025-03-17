@@ -16,6 +16,7 @@ class ResponseModel {
     static getBadRequestResponse = () => new ResponseModel(400, "Bad Request", null);
     static getServerSideError = (message,data) => new ResponseModel(500, message, data);
     static getDataConflictError = (message,data) => new ResponseModel(409, message, data);
+    static getNotFoundResponse = (message,data) => new ResponseModel(204, message, data);
 }
 
 module.exports = ResponseModel

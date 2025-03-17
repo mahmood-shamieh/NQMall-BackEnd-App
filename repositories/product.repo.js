@@ -7,12 +7,16 @@ const Category = require('../models/category.model');
 const Variations = require('../models/vairation.model');
 const Values = require('../models/values.model');
 const ProductVariationValues = require('../models/productVariationValues.model');
+const ProductFailure = require('../exceptions/ProductFailure');
+const Product = require('../models/product.model');
+const ProductNotExist = require('../exceptions/ProductNotExist');
+const CreateProductFailure = require('../exceptions/CreateProductFailure');
 
 
 
 class ProductRepo {
     static async getProductCategory(categoryId, page, limit, searchQuery = '%%') {
-        console.log(categoryId);
+
         const pageNumber = parseInt(page) || 1;
         const perPage = parseInt(limit) || 10;
         const offset = (pageNumber - 1) * perPage;
@@ -50,16 +54,19 @@ class ProductRepo {
                 ]
             });
 
-
-            const totalPages = Math.ceil(temp.count / perPage);
-            return {
-                total: temp.count,
-                totalPages: totalPages,
-                currentPage: pageNumber,
-                data: temp.rows
-            };
-        } catch (_) {
-            return null
+            if (temp) {
+                const totalPages = Math.ceil(temp.count / perPage);
+                return {
+                    total: temp.count,
+                    totalPages: totalPages,
+                    currentPage: pageNumber,
+                    data: temp.rows
+                };
+            } else {
+                throw new ProductFailure();
+            }
+        } catch (error) {
+            throw error
         }
 
     }
@@ -101,16 +108,17 @@ class ProductRepo {
                 ]
             });
 
-
-            const totalPages = Math.ceil(temp.count / perPage);
-            return {
-                total: temp.count,
-                totalPages: totalPages,
-                currentPage: pageNumber,
-                data: temp.rows
-            };
-        } catch (_) {
-            return null
+            if (temp) {
+                const totalPages = Math.ceil(temp.count / perPage);
+                return {
+                    total: temp.count,
+                    totalPages: totalPages,
+                    currentPage: pageNumber,
+                    data: temp.rows
+                };
+            } else { throw new ProductFailure() }
+        } catch (error) {
+            throw error
         }
 
     }
@@ -123,10 +131,10 @@ class ProductRepo {
             })
             if (data) { return data; }
             else {
-                return false;
+                return [];
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async updateProduct(body) {
@@ -149,10 +157,10 @@ class ProductRepo {
                 return { ...data.dataValues };
             }
             else {
-                return false;
+                throw new ProductNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async getAllProduct(productId, page, limit, searchQuery) {
@@ -196,16 +204,21 @@ class ProductRepo {
                     ['Id', 'DESC']
                 ]
             });
-            // return { ...temp.dataValues };
-            const totalPages = Math.ceil(temp.count / perPage);
-            return {
-                total: productId != null ? 1 : temp.count,
-                totalPages: productId != null ? 1 : totalPages,
-                currentPage: productId != null ? 1 : pageNumber,
-                data: temp.rows
-            };
-        } catch (_) {
-            return null;
+            if (temp) {
+                const totalPages = Math.ceil(temp.count / perPage);
+                return {
+                    total: productId != null ? 1 : temp.count,
+                    totalPages: productId != null ? 1 : totalPages,
+                    currentPage: productId != null ? 1 : pageNumber,
+                    data: temp.rows
+                };
+            } else {
+                throw new ProductFailure()
+            }
+        } catch (error) {
+            // console.log(error);
+            
+            throw error
         }
 
     }
@@ -220,16 +233,14 @@ class ProductRepo {
             if (deletedProduct) {
                 return true;
             } else {
-                return false;
+                throw new ProductNotExist()
             }
         } catch (error) {
-            return null;
-
+            throw error
         }
     }
     static async createProduct(body) {
         try {
-
             const temp = await product.create(body);
             if (temp) {
                 let createdProduct = temp.dataValues;
@@ -242,10 +253,10 @@ class ProductRepo {
                 return createdProduct;
             }
             else {
-                return false;
+                throw new CreateProductFailure()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async getProductDetails(id) {
@@ -274,7 +285,6 @@ class ProductRepo {
             });
             if (temp) {
                 const variations = temp.variations.map((variation) => {
-
                     return {
                         Id: variation.Id,
                         Price: variation.Price,
@@ -290,19 +300,13 @@ class ProductRepo {
                         }),
                     };
                 });
-                if (temp.IsActive)
-                    return { ...temp.dataValues, variations };
-                else {
-                    return -1;
-                }
+                return { ...temp.dataValues, variations };
             }
             else {
-                return false;
+                throw new ProductNotExist()
             }
-
         } catch (error) {
-            console.log(error);
-            return null;
+            throw error
         }
     }
 }

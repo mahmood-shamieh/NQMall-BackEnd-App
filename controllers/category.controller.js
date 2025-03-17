@@ -58,7 +58,7 @@ class CategoryController {
     } catch (error) {
       let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
       if (error instanceof CreateCategoryFailure) {
-        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Creating Category" : "حدثت مشكلة في إنشاء الصنف", error)
+        temp = ResponseModel.getServerSideError(lang === "en" ? "Error Creating Category" : "حدثت مشكلة في إنشاء الصنف", error)
         MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
       } else {
         MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
@@ -89,7 +89,7 @@ class CategoryController {
     } catch (error) {
       let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
       if (error instanceof CategoryFailure) {
-        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
+        temp = ResponseModel.getServerSideError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
         MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
       } else {
         MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
@@ -111,7 +111,7 @@ class CategoryController {
     } catch (error) {
       let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
       if (error instanceof CategoryFailure) {
-        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
+        temp = ResponseModel.getServerSideError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
         MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
       } else {
         MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
@@ -139,7 +139,7 @@ class CategoryController {
     } catch (error) {
       let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
       if (error instanceof CategoryNotExist) {
-        temp = ResponseModel.getDataConflictError(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
+        temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
         MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
       } else {
         MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
@@ -160,7 +160,7 @@ class CategoryController {
     } catch (error) {
       let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
       if (error instanceof CategoryNotExist) {
-        temp = ResponseModel.getDataConflictError(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
+        temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
         MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
       } else {
         MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)

@@ -3,10 +3,10 @@ const UpdateBrandFailure = require("../exceptions/UpdateBrandFaileur");
 const CreateBrandFailed = require("../exceptions/createBrandFailed");
 const brand = require("../models/brand.model");
 const ResponseModel = require("../models/response.model");
+const MyLogger = require("../util/logging.utility");
 const BrandRepo = require("../repositories/brand.repo");
 
 const brandRepo = require('../repositories/brand.repo');
-const MyLogger = require("../util/logging.utility");
 const SystemUtil = require("../util/system")
 
 
@@ -49,7 +49,7 @@ class BrandController {
         } catch (error) {
             let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
             if (error instanceof CreateBrandFailed) {
-                temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Creating Brand" : "حدثت مشكلة في إنشاء البراند", error)
+                temp = ResponseModel.getServerSideError(lang === "en" ? "Error Creating Brand" : "حدثت مشكلة في إنشاء البراند", error)
                 MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             }
             else {
@@ -71,7 +71,7 @@ class BrandController {
         } catch (error) {
             let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
             if (error instanceof BrandNotExist) {
-                temp = ResponseModel.getDataConflictError(lang === "en" ? "Brand Not Found" : "البراند غير موجود", error)
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Brand Not Found" : "البراند غير موجود", error)
                 MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             }
             else {
@@ -113,7 +113,7 @@ class BrandController {
         } catch (error) {
             let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
             if (error instanceof UpdateBrandFailure) {
-                temp = ResponseModel.getDataConflictError(lang === "en" ? "Brand update failed" : "فشل تعديل البراند", error)
+                temp = ResponseModel.getServerSideError(lang === "en" ? "Brand update failed" : "فشل تعديل البراند", error)
                 MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             } else {
                 MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
@@ -133,7 +133,7 @@ class BrandController {
         } catch (error) {
             let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
             if (error instanceof BrandNotExist) {
-                temp = ResponseModel.getDataConflictError(lang === "en" ? "Brand Not Found" : "البراند غير موجود", error)
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Brand Not Found" : "البراند غير موجود", error)
                 MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             } else {
                 MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
