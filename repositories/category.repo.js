@@ -3,6 +3,9 @@ const category = require('../models/category.model')
 const { sequelize, Sequelize } = require('../config/sequelize.config');
 const Product = require('../models/product.model');
 const Brand = require('../models/brand.model');
+const CategoryNotExist = require('../exceptions/CategoryNotExist');
+const CreateCategoryFailure = require('../exceptions/CreateCategoryFailure');
+const CategoryFailure = require('../exceptions/CategoryFailure');
 
 class CategoryRepo {
     static async getCategoryForView() {
@@ -14,46 +17,43 @@ class CategoryRepo {
             });
             if (data) { return data; }
             else {
-                return false;
+                return [];
             }
         } catch (error) {
-            return null;
+            throw error
         }
     } static async getCategoryBrands(categoryId) {
         // the returned value isn't unique you need to solve this section with also the brand category section
-        // try {
-        const data = await Product.findAll({
-            attributes: [],
-            distinct: true,
-            // attributes: [
-            //     // specify an array where the first element is the SQL function and the second is the alias
-            //     [Sequelize.fn('DISTINCT', Sequelize.col('country')), 'country'],
-            // ],
-            where: {
-                categoryId: categoryId
-            }
-            , include: [Brand]
-            // , group: ['brand.id',]6
-        });
+        try {
+            const data = await Product.findAll({
+                attributes: [],
+                distinct: true,
+                where: {
+                    categoryId: categoryId
+                }
+                , include: [Brand]
 
-        // console.log(data);
-        if (data) {
-            return data.map((element, index) => element.dataValues.brand);
+            });
+            if (data) {
+                return data.map((element, index) => element.dataValues.brand);
+            }
+            else {
+                throw new CategoryNotExist()
+            }
+        } catch (error) {
+            throw error
         }
-        else {
-            return false;
-        }
-        // } catch (error) {
-        //     return null;
-        // }
     }
     static async addCategory(body) {
         try {
 
             const temp = await category.create(body);
-            return { ...temp.dataValues };
+            if (temp) { return { ...temp.dataValues }; }
+            else {
+                throw new CreateCategoryFailure()
+            }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async getCategoryDetails(id, page, limit, searchQuery) {
@@ -78,26 +78,31 @@ class CategoryRepo {
                 };
             }
         }
-
-        // try {
-        // console.log(id != null);
-        const temp = await category.findAndCountAll({
-            where: whereCondition, // Apply search condition if query exists
-            distinct: true,
-            limit: id != null ? 1 : perPage,
-            offset: id != null ? 0 : offset,
-            order: [
-                ['Id', 'DESC']
-            ]
-        });
-        // return { ...temp.dataValues };
-        const totalPages = Math.ceil(temp.count / perPage);
-        return {
-            total: id != null ? 1 : temp.count,
-            totalPages: id != null ? 1 : totalPages,
-            currentPage: id != null ? 1 : pageNumber,
-            data: temp.rows
-        };
+        try {
+            const temp = await category.findAndCountAll({
+                where: whereCondition, // Apply search condition if query exists
+                distinct: true,
+                limit: id != null ? 1 : perPage,
+                offset: id != null ? 0 : offset,
+                order: [
+                    ['Id', 'DESC']
+                ]
+            });
+            if (temp) {
+                const totalPages = Math.ceil(temp.count / perPage);
+                return {
+                    total: id != null ? 1 : temp.count,
+                    totalPages: id != null ? 1 : totalPages,
+                    currentPage: id != null ? 1 : pageNumber,
+                    data: temp.rows
+                };
+            }
+            else {
+                throw new CategoryFailure()
+            }
+        } catch (error) {
+            throw error
+        }
 
         // } catch (error) {
 
@@ -116,16 +121,15 @@ class CategoryRepo {
                 return items;
             }
             else {
-                return false;
+                return new CategoryFailure();
             }
         } catch (error) {
-            return null
+            throw error
         }
 
 
     }
     static async updateCategoryDetails(body) {
-        console.log(body.Id);
         try {
             const temp = await category.update(body, {
                 where: {
@@ -140,16 +144,14 @@ class CategoryRepo {
                 });
                 return { ...updatedCategory.dataValues };
             } else {
-                return null
+                throw new CategoryNotExist();
             }
         } catch (error) {
-
-            return null;
+            throw error;
         }
     }
     static async deleteCategory(id) {
         try {
-
             const temp = await category.destroy({
                 where: {
                     Id: id
@@ -159,10 +161,10 @@ class CategoryRepo {
                 return true;
             }
             else {
-                return false;
+                throw new CategoryNotExist();
             }
         } catch (error) {
-            return null
+            throw error
         }
     }
 }

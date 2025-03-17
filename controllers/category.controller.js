@@ -1,52 +1,47 @@
 const categoryRepo = require("../repositories/category.repo");
 const SystemUtil = require("../util/system")
+const ResponseModel = require("../models/response.model");
+const MyLogger = require("../util/logging.utility");
+const CategoryFailure = require("../exceptions/CategoryFailure");
+const CreateCategoryFailure = require("../exceptions/CreateCategoryFailure");
+const CategoryNotExist = require("../exceptions/CategoryNotExist");
+
 class CategoryController {
 
 
   static async getCategoryForView(req, res) {
-    const data = await categoryRepo.getCategoryForView()
-    if (data) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: data,
-        });
-    } else if (data === false) {
-      res
-        .status(204)
-        .json({ code: 204, message: "No Content", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    const lang = req.headers.lang;
+
+    try {
+      const data = await categoryRepo.getCategoryForView()
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Categories Are' : "الأصناف هي", data);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(500).json(temp);
     }
   }
   static async getCategoryBrands(req, res) {
+    const lang = req.headers.lang;
     const categoryId = req.params.categoryId;
-    
-    const data = await categoryRepo.getCategoryBrands(categoryId)
-    if (data) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: data,
-        });
-    } else if (data === false) {
-      res
-        .status(204)
-        .json({ code: 204, message: "No Content", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+
+    try {
+      const data = await categoryRepo.getCategoryBrands(categoryId)
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Categories Are' : "الأصناف هي", data);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
     }
+    catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(500).json(temp);
+    }
+
   }
   static async create(req, res) {
-
+    const lang = req.headers.lang;
     const body = req.body;
     if (req.files.length) {
       body.ImageSize = req.files[0].size;
@@ -55,79 +50,79 @@ class CategoryController {
           ? req.files[0].path.split("/").slice(1).join("\\")
           : req.files[0].path.split("\\").slice(1).join("\\");
     }
-    const createdCategory = await categoryRepo.addCategory(body);
-    if (createdCategory) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: createdCategory,
-        });
-    } else if (createdCategory === false) {
-      res
-        .status(500)
-        .json({ code: 500, message: "Error Creating Category", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    try {
+      const createdCategory = await categoryRepo.addCategory(body);
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? '' : "", createdCategory);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      if (error instanceof CreateCategoryFailure) {
+        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Creating Category" : "حدثت مشكلة في إنشاء الصنف", error)
+        MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      } else {
+        MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      }
+      res.status(500).json(temp);
     }
+
   }
   static async getCategoryDetails(req, res) {
+    const lang = req.headers.lang;
+
     // Define pagination parameters
 
     const id = req.params.id;
     const page = req.body.page;
     const limit = req.body.limit;
     const searchQuery = req.body.searchQuery;
-    const updatedCategory = await categoryRepo.getCategoryDetails(
-      id,
-      page,
-      limit,
-      searchQuery
-    );
-    if (updatedCategory) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: updatedCategory,
-        });
-    } else if (updatedCategory == null) {
-      res
-        .status(404)
-        .json({ code: 404, message: "No Content Found", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    try {
+      const updatedCategory = await categoryRepo.getCategoryDetails(
+        id,
+        page,
+        limit,
+        searchQuery
+      );
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? '' : "", updatedCategory);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      if (error instanceof CategoryFailure) {
+        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
+        MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      } else {
+        MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      }
+      res.status(500).json(temp);
     }
+
   }
   static async getAllCategories(req, res) {
+    const lang = req.headers.lang;
+
     // Define pagination parameters
 
-    const updatedCategory = await categoryRepo.getAllCategoriesDetails();
-    if (updatedCategory) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: updatedCategory,
-        });
-    } else if (updatedCategory == null) {
-      res
-        .status(404)
-        .json({ code: 404, message: "No Content Found", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    try {
+      const updatedCategory = await categoryRepo.getAllCategoriesDetails();
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? '' : "", updatedCategory);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      if (error instanceof CategoryFailure) {
+        temp = ResponseModel.getDataConflictError(lang === "en" ? "Error Reading Category" : "حدثت مشكلة في قراءة الأصناف", error)
+        MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      } else {
+        MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      }
+      res.status(500).json(temp);
     }
+
   }
   static async updateCategoryDetails(req, res) {
+    const lang = req.headers.lang;
+
     const body = req.body;
 
     if (req.files.length) {
@@ -136,57 +131,46 @@ class CategoryController {
         SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
           ? req.files[0].path.split("/").slice(1).join("\\") : req.files[0].path.split("\\").slice(1).join("\\");
     }
-    const updatedCategory = await categoryRepo.updateCategoryDetails(body);
-    if (updatedCategory) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Data Inserted Successfully",
-          data: updatedCategory,
-        });
-      // res.status(200).json(updatedCategory);
-    } else if (updatedCategory === false) {
-      res
-        .status(404)
-        .json({ code: 404, message: "No Content Found", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    try {
+      const updatedCategory = await categoryRepo.updateCategoryDetails(body);
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? '' : "", updatedCategory);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      if (error instanceof CategoryNotExist) {
+        temp = ResponseModel.getDataConflictError(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
+        MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      } else {
+        MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      }
+      res.status(500).json(temp);
     }
+
   }
   static async deleteCategory(req, res) {
+    const lang = req.headers.lang;
+
     const id = req.params.id;
-    const categoryDeleted = await categoryRepo.deleteCategory(id);
-    if (categoryDeleted) {
-      res
-        .status(200)
-        .json({
-          code: 200,
-          message: "Element Was Deleted Successfully",
-          data: null,
-        });
-    } else if (categoryDeleted === false) {
-      res
-        .status(404)
-        .json({ code: 404, message: "No Content Found", data: null });
-    } else {
-      res
-        .status(500)
-        .json({ code: 500, message: "Unknown Error Happened", data: null });
+    try {
+      const categoryDeleted = await categoryRepo.deleteCategory(id);
+      const temp = ResponseModel.getSuccessResponse(lang === "en" ? '' : "", null);
+      MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      res.status(200).json(temp);
+    } catch (error) {
+      let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+      if (error instanceof CategoryNotExist) {
+        temp = ResponseModel.getDataConflictError(lang === "en" ? "Category Not Exist" : "الصنف ليس موجود", error)
+        MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      } else {
+        MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+      }
+      res.status(500).json(temp);
+
     }
+
   }
-  static async getFormat(req, res) {
-    res.status(200).send({
-      NameAr: "",
-      NameEn: "",
-      DescriptionAr: "",
-      DescriptionEn: "",
-      ImageURL: "",
-      IsActive: "1",
-    });
-  }
+
 }
 
 module.exports = CategoryController;

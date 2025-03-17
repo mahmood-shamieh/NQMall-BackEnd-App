@@ -30,6 +30,6 @@ brandRouter.put('/update',(req, res, next) => AuthMiddleware.AuthAdminAndVendor(
 brandRouter.delete('/delete/:id',(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Brand.name, ActionsUtility.read), brandController.deleteBrand);
 
 // view apis
-brandRouter.get('/brandsView', (req, res, next) => AuthMiddleware.Auth(req, res, next, Brand.name, ActionsUtility.read), brandController.getBrandForView);
+brandRouter.get('/brandsView',  brandController.getBrandForView);
 
 module.exports = brandRouter;
