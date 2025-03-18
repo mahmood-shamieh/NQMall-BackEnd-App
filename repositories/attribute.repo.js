@@ -88,9 +88,7 @@ class AttributeRepo {
                     where: {
                         Id: body.Id
                     }
-                });
-                console.log(data);
-                
+                });                
                 if (data) {
                     const updatedAttribute = await attribute.findOne({
                         where: {
