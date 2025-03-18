@@ -1,5 +1,8 @@
+const MediaFailure = require('../exceptions/Mediafailure');
+const CreateMediaFailure = require('../exceptions/CreateMediaFailure');
 const media = require('../models/media.model');
 const { all } = require('../routes/user.routes');
+const MediaNotExist = require('../exceptions/MediaNotExist');
 
 
 class MediaRepo {
@@ -10,71 +13,66 @@ class MediaRepo {
                     productId: productId
                 }
             });
-            
+
             if (productMedia && productMedia.length) {
                 const data = new Array();
                 productMedia.forEach(element => {
-                    data.push({...element.dataValues});
+                    data.push({ ...element.dataValues });
                 });
                 return data;
             }
             else {
-                return false;
+                throw new MediaNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async addMedia(body) {
         try {
-            console.log(body);
             const temp = await media.create(body);
             if (temp) {
                 return { ...temp.dataValues };
             } else {
-                return false;
+                throw new CreateMediaFailure()
             }
         } catch (error) {
-            console.log(error);
-            return null;
+            throw error
         }
 
     }
     static async getMediaDetails(id) {
         try {
-            let allMedia = [];
             if (id) {
                 const temp = await media.findAll({
                     where: {
-                        productId: id
+                        Id: id
                     }
                 });
-                if (temp) {
+                if (temp && temp.length !== 0) {
                     const returnedData = new Array();
                     temp.forEach(element => {
                         returnedData.push(element.dataValues);
                     });
                     return returnedData;
                 } else {
-                    return false;
+                    throw new MediaNotExist()
                 }
             }
-            else {
-                const temp = await media.findAll();
-                if (temp) {
-                    temp.forEach(element => {
-                        allMedia.push({ ...element.dataValues })
-                    });
-                    return allMedia;
-                }
-                else {
-                    return false;
-                }
-            }
-
-
+            // else {
+            //     const temp = await media.findAll();
+            //     if (temp) {
+            //         temp.forEach(element => {
+            //             allMedia.push({ ...element.dataValues })
+            //         });
+            //         return allMedia;
+            //     }
+            //     else {
+            //         throw new MediaFailure()
+            //     }
+            // }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async deleteMedia(id) {
@@ -88,10 +86,10 @@ class MediaRepo {
                 return true;
             }
             else {
-                return false;
+                throw new MediaNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
 
