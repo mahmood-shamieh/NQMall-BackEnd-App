@@ -2,6 +2,10 @@ const { where } = require('sequelize');
 const attribute = require('../models/attribute.model')
 const SystemUtil = require("../util/system");
 const Values = require('../models/values.model');
+const AttributesNotExist = require('../exceptions/AtrributesNotExist');
+const CreateAtrributeFailure = require('../exceptions/CreateAttributeFailure');
+const CreateAttributeFailure = require('../exceptions/CreateAttributeFailure');
+const AttributeNotExist = require('../exceptions/AttributeNotExist');
 
 
 function isPlaceHolderFile(path) {
@@ -33,10 +37,10 @@ class AttributeRepo {
                 return data;
             }
             else {
-                return false;
+                throw new AttributesNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
@@ -48,33 +52,8 @@ class AttributeRepo {
             "productId": body.productId,
             "Type": body.Type,
         };
-        // let localItemsAr = [];
-        // let localItemsEn = [];
 
-        // for (let index = 0; index < body.itemsAr.length; index++) {
-        //     const element = body.itemsAr[index];
-        //     const haveNotHoverImage = isPlaceHolderFile(filesAr[index].path)
-        //     localItemsAr.push({
-        //         "item": element,
-        //         "hoverImage": haveNotHoverImage ? null : SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
-        //             ? filesAr[index].path.split("/").slice(1).join("\\") : filesAr[index].path.split('\\').slice(1).join('\\'),
-        //     });
-
-        // }
-        // for (let index = 0; index < body.itemsEn.length; index++) {
-        //     const element = body.itemsEn[index];
-        //     const haveNotHoverImage = isPlaceHolderFile(filesEn[index].path)
-        //     localItemsEn.push({
-        //         "item": element,
-        //         "hoverImage": haveNotHoverImage ? null : SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
-        //             ? filesEn[index].path.split("/").slice(1).join("\\") : filesEn[index].path.split('\\').slice(1).join('\\'),
-        //     });
-
-        // }
-        // insertData["ContentAr"] = localItemsAr;
-        // insertData["ContentEn"] = localItemsEn;
         try {
-
             const temp = await attribute.create(insertData);
             if (temp) {
                 let createdAttributes = temp;
@@ -83,10 +62,10 @@ class AttributeRepo {
                 return createdAttributes;
             }
             else {
-                return false;
+                throw new CreateAttributeFailure()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async edit(body) {
@@ -98,20 +77,20 @@ class AttributeRepo {
             "Type": body.Type,
             "Id": body.Id,
         };
-
         try {
-
             const temp = await attribute.findOne({
                 where: {
                     Id: body.Id
                 }
             });
-            if (temp) {
+            if (temp && temp.length !== 0) {
                 const data = await attribute.update(insertData, {
                     where: {
                         Id: body.Id
                     }
                 });
+                console.log(data);
+                
                 if (data) {
                     const updatedAttribute = await attribute.findOne({
                         where: {
@@ -122,21 +101,18 @@ class AttributeRepo {
                     createdAttributes.IsActive = !!createdAttributes.IsActive;
                     createdAttributes.productId = parseInt(createdAttributes.productId);
                     return createdAttributes;
-                } else { return false }
+                } else {
+                     return false }
 
             }
             else {
-                return false;
+                throw new AttributesNotExist();
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async createImageAttribute(body, filesAr, itemsAr, filesEn, itemsEn) {
-        // console.log(itemsAr);
-        // console.log(filesAr);
-        // console.log(itemsEn);
-        // console.log(filesEn);
         const insertData = {
             "NameAr": body.NameAr,
             "NameEn": body.NameEn,
@@ -148,9 +124,6 @@ class AttributeRepo {
         let localItemsEn = new Array();
         if (itemsAr)
             for (let index = 0; index < itemsAr.length; index++) {
-                // const element = itemsAr[index];
-                // console.log(itemsAr[index].path);
-                // console.log(itemsAr[index].originalname);
                 const haveNotHoverImage = isPlaceHolderFile(filesAr[index].path);
                 localItemsAr.push({
                     "item": SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
@@ -159,7 +132,6 @@ class AttributeRepo {
                         ? filesAr[index].path.split("/").slice(1).join("\\") : filesAr[index].path.split('\\').slice(1).join('\\'),
                 });
             }
-        // console.log(localItemsAr);
         if (itemsEn)
             for (let index = 0; index < itemsEn.length; index++) {
                 const element = itemsEn[index];
@@ -173,19 +145,15 @@ class AttributeRepo {
             }
         insertData['ContentAr'] = localItemsAr;
         insertData['ContentEn'] = localItemsEn;
-        // console.log(insertData['ContentAr']);
-        // return 
-
         try {
             const temp = await attribute.create(insertData);
             if (temp) {
                 return { ...temp.dataValues };
             } else {
-                return false;
+                throw new CreateAttributeFailure();
             }
         } catch (error) {
-            return null;
-
+            throw error
         }
     }
     static async deleteImageAttribute(id) {
@@ -200,9 +168,9 @@ class AttributeRepo {
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else throw new AttributeNotExist();
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
@@ -218,9 +186,9 @@ class AttributeRepo {
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else throw new AttributeNotExist();
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
