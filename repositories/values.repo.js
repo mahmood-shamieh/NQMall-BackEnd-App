@@ -2,6 +2,9 @@ const { where } = require('sequelize');
 const attribute = require('../models/attribute.model')
 const SystemUtil = require("../util/system");
 const Values = require('../models/values.model');
+const ValueNotExist = require('../exceptions/ValueNotExist');
+const CreateValueFailure = require('../exceptions/CreateValueFailure');
+const ValueFailure = require('../exceptions/ValueFailure');
 
 
 // function isPlaceHolderFile(path) {
@@ -33,10 +36,10 @@ class ValuesRepo {
                 return data;
             }
             else {
-                return false;
+                throw new ValueNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
@@ -65,10 +68,10 @@ class ValuesRepo {
                 return createdValues;
             }
             else {
-                return false;
+                throw new CreateValueFailure()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async edit(body, hoverImageAr, hoverImageEn) {
@@ -77,8 +80,6 @@ class ValuesRepo {
             "ValueEn": body.ValueEn,
             "attributeId": body.attributeId
         };
-        // console.log(hoverImageAr);
-        // console.log(hoverImageEn);
         if (hoverImageAr) {
             insertData['HoverImageAr'] = SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
                 ? hoverImageAr[0].path.split("/").slice(1).join("\\") : hoverImageAr[0].path.split('\\').slice(1).join('\\');
@@ -87,7 +88,6 @@ class ValuesRepo {
             insertData['HoverImageEn'] = SystemUtil.detectOS() === SystemUtil.OS_TYPE.MACOS
                 ? hoverImageEn[0].path.split("/").slice(1).join("\\") : hoverImageEn[0].path.split('\\').slice(1).join('\\');
         }
-
         try {
 
             const temp = await Values.findOne({
@@ -95,7 +95,7 @@ class ValuesRepo {
                     Id: body.Id
                 }
             });
-            if (temp) {
+            if (temp && temp.length !== 0) {
                 const updatedData = await Values.update(insertData, {
                     where: {
                         Id: body.Id
@@ -112,15 +112,14 @@ class ValuesRepo {
                     createdValues.attributeId = parseInt(createdValues.attributeId);
                     return createdValues;
                 } else {
-                    return false;
+                    throw new ValueFailure()
                 }
-
             }
             else {
-                return false;
+                throw new ValueNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
     static async createImageValues(attributeId, fileAr, fileEn, hoverImageAr, hoverImageEn) {
@@ -150,14 +149,13 @@ class ValuesRepo {
             if (temp) {
                 return { ...temp.dataValues };
             } else {
-                return false;
+                throw new CreateValueFailure()
             }
         } catch (error) {
-            return null;
-
+            throw error
         }
     }
-    static async editImageValues(id,attributeId, fileAr, fileEn, hoverImageAr, hoverImageEn) {
+    static async editImageValues(id, attributeId, fileAr, fileEn, hoverImageAr, hoverImageEn) {
 
         let insertData = {
             "attributeId": attributeId,
@@ -185,7 +183,7 @@ class ValuesRepo {
                     Id: id
                 }
             })
-            if (temp) {
+            if (temp && temp.length !== 0) {
                 const update = await Values.update(insertData, {
                     where: {
                         Id: id
@@ -198,14 +196,15 @@ class ValuesRepo {
                         }
                     })
                     return { ...updatedData.dataValues };
-                } else { return false; }
+                } else {
+                    throw new ValueFailure()
+                }
 
             } else {
-                return false;
+                throw new ValueNotExist()
             }
         } catch (error) {
-            return null;
-
+            throw error
         }
     }
     static async deleteImageValue(id) {
@@ -220,9 +219,12 @@ class ValuesRepo {
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else {
+                throw new ValueNotExist()
+
+            }
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
@@ -238,9 +240,11 @@ class ValuesRepo {
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else {
+                throw new ValueNotExist()
+            }
         } catch (error) {
-            return null;
+            throw error
         }
 
     }

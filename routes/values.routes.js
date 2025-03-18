@@ -4,6 +4,9 @@ const express = require('express')
 const valuesRoute = express.Router();
 const path = require('path')
 const multer = require('multer');
+const AuthMiddleware = require('../middlewares/auth.middleware');
+const Values = require('../models/values.model');
+const ActionsUtility = require('../util/Action.utility');
 const storage = multer.diskStorage({
     destination: 'public/attributeValues/',
     filename: function (req, file, cb) {
@@ -18,14 +21,15 @@ const files = multer({
     // }
 });
 // this is for type items and list
-valuesRoute.post("/create", files.fields([{ name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.create);
-valuesRoute.post("/edit", files.fields([{ name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.edit);
+valuesRoute.post("/create",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.add), files.fields([{ name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.create);
+valuesRoute.post("/edit",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.edit), files.fields([{ name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.edit);
 // this is for type images
-valuesRoute.post("/create/img", files.fields([{ name: "ValueAr", }, { name: "ValueEn", }, { name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.createImageAttributeValue);
-valuesRoute.post("/edit/img", files.fields([{ name: "ValueAr", }, { name: "ValueEn", }, { name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.editImageAttributeValue);
+valuesRoute.post("/create/img",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.add), files.fields([{ name: "ValueAr", }, { name: "ValueEn", }, { name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.createImageAttributeValue);
+valuesRoute.post("/edit/img",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.edit), files.fields([{ name: "ValueAr", }, { name: "ValueEn", }, { name: "HoverImageAr", }, { name: "HoverImageEn", }]), valuesController.editImageAttributeValue);
 
-valuesRoute.delete("/delete/:id", valuesController.deleteAttributesValue);
-valuesRoute.delete("/delete/image/:id", valuesController.deleteImageAttributeValue);
+valuesRoute.delete("/delete/:id",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.delete), valuesController.deleteAttributesValue);
+valuesRoute.delete("/delete/image/:id",(req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, Values.name, ActionsUtility.delete), valuesController.deleteImageAttributeValue);
+
 valuesRoute.get("/getAttributeValues/:attributeId", valuesController.getProductAttributeValues);
 
 module.exports = valuesRoute;
