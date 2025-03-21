@@ -1,10 +1,13 @@
 
 
-const productVariationController  = require('../controllers/productVariationValues.controller')
+const productVariationController = require('../controllers/productVariationValues.controller')
 const express = require('express')
 const productVariationRoute = express.Router();
 const path = require('path')
 const multer = require('multer');
+const AuthMiddleware = require('../middlewares/auth.middleware');
+const ActionsUtility = require('../util/Action.utility');
+const ProductVariationValues = require('../models/productVariationValues.model');
 // const storage = multer.diskStorage({
 //     destination: 'public/attributeValues/',
 //     filename: function (req, file, cb) {
@@ -19,8 +22,8 @@ const multer = require('multer');
 //     // }
 // });
 // this is for type items and list
-productVariationRoute.post("/create", productVariationController.create);
-productVariationRoute.get("/valuesVariations/:valueId", productVariationController.getVariationsForValue);
-productVariationRoute.delete("/delete/:id", productVariationController.deleteVariations);
+productVariationRoute.post("/create", (req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, ProductVariationValues.name, ActionsUtility.add), productVariationController.create);
+productVariationRoute.get("/valuesVariations/:valueId", (req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, ProductVariationValues.name, ActionsUtility.read), productVariationController.getVariationsForValue);
+productVariationRoute.delete("/delete/:id", (req, res, next) => AuthMiddleware.AuthAdminAndVendor(req, res, next, ProductVariationValues.name, ActionsUtility.delete), productVariationController.deleteVariations);
 
 module.exports = productVariationRoute;

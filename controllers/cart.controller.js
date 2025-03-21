@@ -1,7 +1,11 @@
-const {sequelize} = require('../config/sequelize.config');
+const { sequelize } = require('../config/sequelize.config');
 const attributeRepo = require('../repositories/attribute.repo');
 const CartRepo = require('../repositories/cart.repo');
 const ValuesRepo = require('../repositories/values.repo');
+const ResponseModel = require("../models/response.model");
+const MyLogger = require("../util/logging.utility");
+const CartNotExist = require('../exceptions/CartNotExist');
+const VariationNotExist = require('../exceptions/VariationNotExist');
 
 
 
@@ -9,133 +13,66 @@ const ValuesRepo = require('../repositories/values.repo');
 
 class CartController {
     static async addToCart(req, res) {
-        // console.log(req.body);
-        const temp = await CartRepo.addToCart(req.body);
-        // console.log("bbbb");
-        if (temp) {
-            res.status(200).json({ code: 200, message: "cart Updated Successfully ", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ code: 500, message: "", data: null, });
-        } else { 
-            res.status(500).json({ code: 500, message: "UnKnown Error Happened", data: null, });
-        }
+        const lang = req.headers.lang;
+        try {
+            const data = await CartRepo.addToCart(req.user.Id, req.body);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Cart is' : "السلة هي", data);
+            MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            // if (error instanceof VariationNotExist) {
+            //     temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Variations not exist" : "هذه التشكيلة غير موجودة", error)
+            //     MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            // } else {
+            MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            // }
+            res.status(500).json(temp);
+        }      // console.log("bbbb");
     } static async removeFromCart(req, res) {
         // console.log(req.body);
-        const temp = await CartRepo.removeFromCart(req.body);
-        // console.log("bbbb");
-        if (temp) {
-            res.status(200).json({ code: 200, message: "cart ", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ code: 500, message: "", data: null, });
-        } else { 
-            res.status(500).json({ code: 500, message: "UnKnown Error Happened", data: null, });
-        }
-    }
-    static async getUserCart(req, res) {   
-        const userId = req.params.userId;
-        const temp = await CartRepo.getUserCart(userId);
-        if (temp) {
-            res.status(200).json({ code: 200, message: "cart", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ code: 500, message: "", data: null, });
-        } else { 
-            res.status(500).json({ code: 500, message: "UnKnown Error Happened", data: null, });
-        }
-    }
-    // media upload finished and we arrived to the attributes processing now
-    static async create(req, res) {
-        const body = req.body;
-        const files = req.files;
-        const temp = await ValuesRepo.create(body, files['HoverImageAr'], files['HoverImageEn']);
-        if (temp) {
-            res.status(200).json({ code: 200, message: "Data Inserted Successfully", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ message: 'Error Creating value' });
-        }
-        else {
-            res.status(500).json({ message: 'Unknown Error Happened' });
-        }
+        const lang = req.headers.lang
 
+        try {
+            const data = await CartRepo.removeFromCart(req.user, req.body);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Cart is' : "السلة هي", data);
+            MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
 
-    }
-    static async edit(req, res) {
-        const body = req.body;
-        const files = req.files;
-        // console.log(files);
-        const temp = await ValuesRepo.edit(body, files['HoverImageAr'], files['HoverImageEn']);
-        if (temp) {
-            res.status(200).json({ code: 200, message: "Data Updated Successfully", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ message: 'Error Updating value' });
-        }
-        else {
-            res.status(500).json({ message: 'Unknown Error Happened' });
-        }
-
-
-    } static async createImageAttributeValue(req, res) {
-        const attributeId = req.body.attributeId;
-        const files = req.files;
-        // console.log(req.files["itemsEn[]"]);
-        // console.log(req.files["itemsAr[]"]);
-        // console.log(req.files["mediaEn[]"]);
-        // console.log(req.files["mediaAr[]"]);
-        const temp = await ValuesRepo.createImageValues(attributeId, files["ValueAr"], files["ValueEn"], files["HoverImageAr"], files["HoverImageEn"]);
-
-        if (temp) {
-            res.status(200).json({ code: 200, message: "Data Inserted Successfully", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ message: 'Error Creating image value' });
-        }
-        else {
-            res.status(500).json({ message: 'Unknown Error Happened' });
-        }
-
-
-    }
-    static async editImageAttributeValue(req, res) {
-        const attributeId = req.body.attributeId;
-        const id = req.body.Id;
-        const files = req.files;
-        // console.log(req.files["itemsEn[]"]);
-        // console.log(req.files["itemsAr[]"]);
-        // console.log(req.files["mediaEn[]"]);
-        // console.log(req.files["mediaAr[]"]);
-        const temp = await ValuesRepo.editImageValues(id, attributeId, files["ValueAr"], files["ValueEn"], files["HoverImageAr"], files["HoverImageEn"]);
-
-        if (temp) {
-            res.status(200).json({ code: 200, message: "Data Inserted Successfully", data: temp, });
-        } else if (temp === false) {
-            res.status(500).json({ message: 'Error Creating image value' });
-        }
-        else {
-            res.status(500).json({ message: 'Unknown Error Happened' });
-        }
-
-
-    }
-    static async deleteImageAttributeValue(req, res) {
-        const id = req.params.id;
-        const deletedItem = await ValuesRepo.deleteImageValue(id);
-        if (deletedItem) {
-            res.status(200).json({ code: 200, message: "Value deleted successfully", data: null, });
-        } else if (deletedItem === false) {
-            res.status(200).json({ code: 204, message: "Value not found", data: null, });
-        } else {
-            res.status(500).json({ code: 500, message: "Error happened", data: null, });
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            if (error instanceof CartNotExist) {
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Cart not exist" : "السلة غير موجودة", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else if (error instanceof VariationNotExist) {
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Variations not exist" : "هذه التشكيلة غير موجودة", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else {
+                MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            res.status(500).json(temp);
         }
 
     }
-    static async deleteAttributesValue(req, res) {
-        const id = req.params.id;
-        const deletedItem = await ValuesRepo.deleteValue(id);
-        if (deletedItem) {
-            res.status(200).json({ code: 200, message: "Value deleted successfully", data: null, });
-        } else if (deletedItem === false) {
-            res.status(200).json({ code: 204, message: "Value not found", data: null, });
-        } else {
-            res.status(500).json({ code: 500, message: "Error happened", data: null, });
+    static async getUserCart(req, res) {
+        const lang = req.headers.lang
+        const userId = req.user.Id;
+        try {
+            const data = await CartRepo.getUserCart(userId);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Cart is' : "السلة هي", data);
+            MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            if (error instanceof CartNotExist) {
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Cart not exist" : "السلة غير موجودة", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else {
+                MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            res.status(500).json(temp);
         }
     }
+
 }
 module.exports = CartController

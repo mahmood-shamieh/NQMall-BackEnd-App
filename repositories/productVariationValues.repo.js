@@ -3,6 +3,8 @@ const SystemUtil = require("../util/system");
 const Values = require('../models/values.model');
 const Variations = require('../models/vairation.model');
 const ProductVariationValues = require("../models/productVariationValues.model");
+const ProductVariationNotExist = require("../exceptions/ProductVariationNotExist");
+const CreateProductVariationFailure = require("../exceptions/CreateProductVariationFailure");
 
 
 
@@ -25,14 +27,13 @@ class ProductVariationsValueRepo {
                 return data;
             }
             else {
-                return false;
+                throw new ProductVariationNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
 
     }
-    static counter = 1;
     static async create(body, { transaction } = {}) {
 
 
@@ -48,9 +49,8 @@ class ProductVariationsValueRepo {
                 return createdValues;
             }
             else {
-                throw 'Unhandled Transaction'
+                throw new CreateProductVariationFailure()
             }
-
         }
         catch (error) {
             throw error
@@ -61,6 +61,7 @@ class ProductVariationsValueRepo {
 
 
     static async deleteVariation(id) {
+    
         try {
             const deletedItem = await ProductVariationValues.destroy(
                 {
@@ -68,13 +69,13 @@ class ProductVariationsValueRepo {
                         Id: id
                     }
                 }
-            );
+            );            
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else throw new ProductVariationNotExist()
         } catch (error) {
-            return null;
+            throw error
         }
 
     }

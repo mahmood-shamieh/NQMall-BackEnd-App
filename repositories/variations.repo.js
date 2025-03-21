@@ -3,6 +3,10 @@ const SystemUtil = require("../util/system");
 const Values = require('../models/values.model');
 const Variations = require('../models/vairation.model');
 const ProductVariationValues = require("../models/productVariationValues.model");
+const VariationNotExist = require("../exceptions/VariationNotExist");
+const CreateVariationFailure = require("../exceptions/CreateVariationFailure");
+const VariationFailure = require("../exceptions/VariationFailure");
+
 
 
 
@@ -29,19 +33,20 @@ class VariationsRepo {
                 const data = new Array();
                 productVariations.forEach(element => {
                     let temp = {};
-                    temp = {...element.dataValues,product_variation_values:element.dataValues.product_variation_values,Values:element.dataValues.product_variation_values.map(variation=>{
-                        return variation.value
-                    })}
+                    temp = {
+                        ...element.dataValues, product_variation_values: element.dataValues.product_variation_values, Values: element.dataValues.product_variation_values.map(variation => {
+                            return variation.value
+                        })
+                    }
                     data.push(temp);
                 });
                 return data;
             }
             else {
-                return false;
+                throw new VariationNotExist();
             }
         } catch (error) {
-            console.log(error);
-            return null;
+            throw error
         }
 
     }
@@ -62,11 +67,13 @@ class VariationsRepo {
                 return createdValues.dataValues;
             }
             else {
-                throw "UnKnown Error"
-                // return false;
+                throw new CreateVariationFailure()
             }
         } catch (error) {
-            throw error
+            if (error.name === "SequelizeForeignKeyConstraintError")
+                throw new CreateVariationFailure()
+            else
+                throw error
         }
     }
 
@@ -84,7 +91,7 @@ class VariationsRepo {
                     Id: body.Id
                 }
             });
-            if (data) {
+            if (data && data.length !== 0) {
                 const temp = await Variations.update(insertData, {
                     where: {
                         Id: body.Id
@@ -101,13 +108,13 @@ class VariationsRepo {
                     return createdValues;
                 }
                 else {
-                    return false;
+                    throw new VariationFailure()
                 }
             } else {
-                return false;
+                throw new VariationNotExist()
             }
         } catch (error) {
-            return null;
+            throw error
         }
     }
 
@@ -124,9 +131,9 @@ class VariationsRepo {
             if (deletedItem) {
                 return true;
             }
-            else return false;
+            else throw new VariationNotExist()
         } catch (error) {
-            return null;
+            throw error
         }
 
     }

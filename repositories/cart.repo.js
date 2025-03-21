@@ -5,22 +5,25 @@ const Variations = require('../models/vairation.model');
 const ProductVariationValues = require("../models/productVariationValues.model");
 const Cart = require("../models/cart.model");
 const CartItem = require("../models/cartItem.model");
-const {sequelize,Sequelize} = require("../config/sequelize.config");
+const { sequelize, Sequelize } = require("../config/sequelize.config");
 const Product = require("../models/product.model");
 const Media = require("../models/media.model");
+const CartNotExist = require("../exceptions/CartNotExist");
+const VariationNotExist = require("../exceptions/VariationNotExist");
+const CreateCartFailure = require("../exceptions/CreateCartFailure");
 
 
 
 
 
 class CartRepo {
-    static async addToCart(body) {
+    static async addToCart(userId,body) {
         const transaction = await sequelize.transaction(); // Start transaction
         try {
             let cartId = null;
-            const CartFound = await Cart.findOne({ where: { userId: body.userId } });
+            const CartFound = await Cart.findOne({ where: { userId: userId } });
             if (!CartFound) {
-                const cart = await Cart.create({ userId: body.userId }, { transaction });
+                const cart = await Cart.create({ userId: userId }, { transaction });
                 cartId = cart.dataValues.Id;
             } else {
                 cartId = CartFound.dataValues.Id;
@@ -45,7 +48,7 @@ class CartRepo {
             }
             const cartWithVariation = await Cart.findOne({
                 where: {
-                    userId: body.userId
+                    userId: userId
                 },
                 include: [{
                     model: CartItem, include: [{
@@ -80,19 +83,18 @@ class CartRepo {
             data.CartItems = tempCartItems
             return data;
         } catch (error) {
-            console.log(error);
             if (transaction)
                 await transaction.rollback(); // Rollback transaction on error
-            return null;
+            throw error
         }
 
 
 
     }
-    static async removeFromCart(body) {
+    static async removeFromCart(user,body) {
         try {
             const carItems = body.variations
-            const userId = body.userId;
+            const userId = user.Id
             const userCart = await Cart.findOne({
                 where: {
                     userId: userId
@@ -125,6 +127,9 @@ class CartRepo {
                         }, { model: Product, include: [Media] }]
                     }],
                 })
+                if (!cartWithVariation) {
+                    throw new VariationNotExist()
+                }
                 let data = { ...cartWithVariation.dataValues };
                 const tempCartItems = data.CartItems.map((cartItem) => ({
                     ...cartItem.dataValues, variation: {
@@ -142,10 +147,9 @@ class CartRepo {
                 data.CartItems = tempCartItems
                 return data;
             }
-            else return false;
+            else throw new CartNotExist()
         } catch (error) {
-            console.log(error);
-            return null;
+            throw error
         }
 
 
@@ -175,7 +179,7 @@ class CartRepo {
                 }],
             })
             if (!cartWithVariation)
-                return false;
+                throw new CartNotExist()
             else {
                 let data = { ...cartWithVariation.dataValues };
                 const tempCartItems = data.CartItems.map((cartItem) => ({
@@ -195,96 +199,10 @@ class CartRepo {
                 return data;
             }
         } catch (error) {
-            console.log(error);
-            return null;
+            throw error;
         }
 
 
-
-    }
-    static async create(body, { transaction } = {}) {
-        let insertData = {
-            "Price": body.Price,
-            "Stock": body.Stock,
-            "productId": body.productId
-        };
-        try {
-
-            const temp = transaction ? await Variations.create(insertData, { transaction: transaction })
-                : await Variations.create(insertData);
-            if (temp) {
-                let createdValues = temp;
-                createdValues.IsActive = !!createdValues.IsActive;
-                createdValues.attributeId = parseInt(createdValues.attributeId);
-                return createdValues.dataValues;
-            }
-            else {
-                throw "UnKnown Error"
-                // return false;
-            }
-        } catch (error) {
-            throw error
-        }
-    }
-
-    static async edit(body) {
-        let insertData = {
-            "Price": body.Price,
-            "Stock": body.Stock,
-            "productId": body.productId,
-            "IsActive": !!body.IsActive
-
-        };
-        try {
-            const data = await Variations.findOne({
-                where: {
-                    Id: body.Id
-                }
-            });
-            if (data) {
-                const temp = await Variations.update(insertData, {
-                    where: {
-                        Id: body.Id
-                    }
-                });
-                if (temp) {
-                    const data = await Variations.findOne({
-                        where: {
-                            Id: body.Id
-                        }
-                    });
-                    let createdValues = data.dataValues;
-                    createdValues.IsActive = !!createdValues.IsActive;
-                    return createdValues;
-                }
-                else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (error) {
-            return null;
-        }
-    }
-
-
-    static async deleteVariation(id) {
-        try {
-            const deletedItem = await Variations.destroy(
-                {
-                    where: {
-                        Id: id
-                    }
-                }
-            );
-            if (deletedItem) {
-                return true;
-            }
-            else return false;
-        } catch (error) {
-            return null;
-        }
 
     }
 
