@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const {sequelize} = require('../config/sequelize.config');
+const { sequelize } = require('../config/sequelize.config');
 const Cart = require('./cart.model');
 const Product = require('./product.model');
 const Rating = require('./rating.model');
@@ -28,8 +28,13 @@ const User = sequelize.define('users', {
         type: DataTypes.STRING(255),
         allowNull: false,
     },
+    // Address: {
+    //     type: DataTypes.JSON,
+
+    //     // No allowNull since JSON can be empty indicating no address
+    // },
     Address: {
-        type: DataTypes.JSON,
+        type: DataTypes.STRING,
 
         // No allowNull since JSON can be empty indicating no address
     },
