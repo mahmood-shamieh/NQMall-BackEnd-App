@@ -1,7 +1,7 @@
 const brand = require('../models/brand.model');
 const { sequelize, Sequelize } = require('../config/sequelize.config');
 const { all } = require('../routes/user.routes');
-const CreateBrandFailed = require('../exceptions/createBrandFailed');
+const CreateBrandFailed = require('../exceptions/CreateBrandFailed');
 const BrandFailure = require('../exceptions/BrandFailure');
 const UpdateBrandFailure = require('../exceptions/UpdateBrandFaileur');
 const BrandNotExist = require('../exceptions/BrandNotExist');

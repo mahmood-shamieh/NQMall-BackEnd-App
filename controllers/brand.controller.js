@@ -1,13 +1,13 @@
 const BrandNotExist = require("../exceptions/BrandNotExist");
 const UpdateBrandFailure = require("../exceptions/UpdateBrandFaileur");
-const CreateBrandFailed = require("../exceptions/createBrandFailed");
 const brand = require("../models/brand.model");
 const ResponseModel = require("../models/response.model");
 const MyLogger = require("../util/logging.utility");
 const BrandRepo = require("../repositories/brand.repo");
 
 const brandRepo = require('../repositories/brand.repo');
-const SystemUtil = require("../util/system")
+const SystemUtil = require("../util/system");
+const CreateBrandFailed = require("../exceptions/CreateBrandFailed");
 
 
 
