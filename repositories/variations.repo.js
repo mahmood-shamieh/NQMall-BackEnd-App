@@ -6,6 +6,7 @@ const ProductVariationValues = require("../models/productVariationValues.model")
 const VariationNotExist = require("../exceptions/VariationNotExist");
 const CreateVariationFailure = require("../exceptions/CreateVariationFailure");
 const VariationFailure = require("../exceptions/VariationFailure");
+const { where } = require("sequelize");
 
 
 
@@ -69,6 +70,27 @@ class VariationsRepo {
             else {
                 throw new CreateVariationFailure()
             }
+        } catch (error) {
+            if (error.name === "SequelizeForeignKeyConstraintError")
+                throw new CreateVariationFailure()
+            else
+                throw error
+        }
+    }
+    static async deleteAllVariationsAndItsLinks(productId, { transaction } = {}) {
+        try {
+            const temp = transaction ? await Variations.destroy( {
+                where: {
+                    productId: productId
+                }, transaction: transaction
+            })
+                : await Variations.destroy({
+                    where: {
+                        productId: productId
+                    }
+                });
+           console.log(temp)
+           return true;
         } catch (error) {
             if (error.name === "SequelizeForeignKeyConstraintError")
                 throw new CreateVariationFailure()

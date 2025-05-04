@@ -43,6 +43,8 @@ class ProductVariationValuesController {
         const body = req.body;
         const transaction = await sequelize.transaction();
         try {
+            const deleteOldData = await VariationsRepo.deleteAllVariationsAndItsLinks(body[0].variation.productId, { transaction: transaction });
+
             for (const element of body) {
                 let variation = null;
                 variation = await VariationsRepo.create(element.variation, { transaction: transaction })
