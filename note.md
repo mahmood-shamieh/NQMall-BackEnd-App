@@ -1,0 +1,1 @@
+failed product import is at this url http://7-daysmart.com:3000/system/media/failed_rows.csv
