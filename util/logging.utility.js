@@ -1,9 +1,17 @@
 const winston = require('winston');
+const RequestContext = require('./RequestContext');
 const { combine, timestamp, printf, colorize } = winston.format;
 
 // Custom log format
 const logFormat = printf(({ level, message, timestamp }) => {
-    return `${timestamp} [${level}]: ${message}`;
+    // console.log(message.split('|')[0]);
+    // console.log(message.split('|')[1]);
+    const context = RequestContext.get();
+    const path = context?.req?.originalUrl || 'N/A';
+    const body = JSON.stringify(context?.req?.body) || 'N/A';
+
+    
+    return `${timestamp} [${level}] [${path}]: ${message.split('|')[0]} | ${message.split('|')[1]} | ${body}`;
 });
 
 // Create a logger instance

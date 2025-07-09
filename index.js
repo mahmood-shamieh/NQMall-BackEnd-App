@@ -41,7 +41,8 @@ const Order = require("./models/order.model")
 const Section = require("./models/section.model")
 const AdminPrev = require("./models/admin_prev.model")
 const AppConfig = require("./models/app_config")
-const { sequelize } = require('./config/sequelize.config')
+const { sequelize } = require('./config/sequelize.config');
+const RequestContext = require('./util/RequestContext');
 
 // relations
 User.hasOne(Cart);
@@ -110,6 +111,10 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+    RequestContext.run(req, () => next());
+});
+
 app.use('/users', userRoutes);
 app.use('/category', categoryRouter);
 app.use('/brands', brandRouter);
