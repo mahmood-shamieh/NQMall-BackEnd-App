@@ -11,10 +11,121 @@ const ProductFailure = require('../exceptions/ProductFailure');
 const Product = require('../models/product.model');
 const ProductNotExist = require('../exceptions/ProductNotExist');
 const CreateProductFailure = require('../exceptions/CreateProductFailure');
+const fs = require('fs');
+const csv = require('csv-parser');
+const path = require('path');
+
+
 
 
 
 class ProductRepo {
+    static async uploadProductFileProcess(file) {
+        const failedRowsPath = path.join(path.dirname(file.path), 'failed_rows.csv');
+        // Clear the failed_rows.csv file before processing
+        if (fs.existsSync(failedRowsPath)) {
+            fs.truncateSync(failedRowsPath, 0);
+        }
+        let headerWritten = false;
+        try {
+            let i = 0;
+            fs.createReadStream(file.path)
+                .pipe(csv())
+                .on('data', async (row) => {
+                    const transaction = await sequelize.transaction();
+                    try {
+                        if (row.attributes == "null" || row.attributes == "") throw "";
+                        i += 1;
+                        console.log(i);
+                        let tempDetailsAr = row.detailsAr.split('|').map(e => e.trim());
+                        const tempDetailsArMap = {};
+                        tempDetailsAr.forEach(entry => {
+                            const [key, value] = entry.split(':').map(part => part.trim());
+                            tempDetailsArMap[key] = value;
+                        });
+                        let tempDetailsEn = row.detailsEn.split('|').map(e => e.trim());
+                        const tempDetailsEnMap = {};
+                        tempDetailsEn.forEach(entry => {
+                            const [key, value] = entry.split(':').map(part => part.trim());
+                            tempDetailsEnMap[key] = value;
+                        });
+                        const element = {
+                            NameAr: row.nameAr == 'null' || row.nameAr == '' ? null : row.nameAr,
+                            NameEn: row.nameEn == 'null' || row.nameEn == '' ? null : row.nameEn,
+                            DescriptionAr: row.descriptionAr == 'null' || row.descriptionAr == '' ? null : row.descriptionAr,
+                            DescriptionEn: row.descriptionEn == 'null' || row.descriptionEn == '' ? null : row.descriptionEn,
+                            Price: parseInt(row.price.split(',')[0].trim()),
+                            SalePrice: row.salesPrice == 'null' || row.salesPrice == '' ? null : row.salesPrice,
+                            DetailsAr: tempDetailsArMap,
+                            DetailsEn: tempDetailsEnMap,
+                            BrandId: row.brand == 'null' || row.brand == '' ? null : row.brand,
+                            CategoryId: row.category == 'null' || row.category == '' ? null : row.category,
+                        };
+                        let addedProduct = await Product.create(element, { transaction });
+                        addedProduct = addedProduct.get({ plain: true });
+                        let mediaModel = {
+                            URL:
+                                'media\\defaultImage.jpg',
+                            Type: "image",
+                            Size: 120,
+                            IsActive: true,
+                            productId: addedProduct.Id,
+                        };
+                        let addedMedia = await Media.create(mediaModel, { transaction });
+                        const tempAttribute = row.attributes.split('>').map(e => e.trim())[0];
+                        let attributeModel = {
+                            NameAr: tempAttribute.split(":").map(e => e.trim())[1],
+                            NameEn: tempAttribute.split(":").map(e => e.trim())[0],
+                            IsActive: true,
+                            productId: addedProduct.Id,
+                            Type: "items"
+                        }
+                        let addedAttribute = await Attribute.create(attributeModel, { transaction });
+                        addedAttribute = addedAttribute.get({ plain: true })
+                        const tempValues = row.attributes.split('>').map(e => e.trim())[1].split('،');
+                        for (let index = 0; index < tempValues.length; index++) {
+                            const values = tempValues[index].split('_').map(e => e.trim());
+                            const tempVariation = {
+                                Price: values[1],
+                                Stock: values[2],
+                                productId: addedProduct.Id
+                            }
+                            let addedVariation = await Variations.create(tempVariation, { transaction });
+                            addedVariation = addedVariation.get({ plain: true })
+                            const tempValue = {
+                                ValueAr: values[0].split(':').map(e => e.trim())[1],
+                                ValueEn: values[0].split(':').map(e => e.trim())[0],
+                                HoverImageAr: null,
+                                HoverImageEn: null,
+                                attributeId: addedAttribute.Id
+                            }
+                            let addedValue = await Values.create(tempValue, { transaction });
+                            addedValue = addedValue.get({ plain: true });
+                            const tempVariationValues = {
+                                valueId: addedValue.Id,
+                                variationId: addedVariation.Id
+                            };
+                            let addedVariationValues = await ProductVariationValues.create(tempVariationValues, { transaction });
+                            addedVariationValues = addedVariationValues.get({ plain: true });
+                        }
+                        await transaction.commit();
+                    } catch (error) {
+                        await transaction.rollback();
+                        const fileExists = fs.existsSync(failedRowsPath);
+                        if (!fileExists) {
+                            fs.appendFileSync(failedRowsPath, Object.keys(row).join(',') + '\n');
+                        }
+                        fs.appendFileSync(failedRowsPath, Object.values(row).map(v => '"'+String(v).replace(/"/g, '""')+'"').join(',') + '\n');
+                    }
+                })
+                .on('end', () => {
+                    console.log('CSV file successfully processed');
+                });
+        } catch (error) {
+            console.log(error);
+            throw error
+        }
+    }
     static async getProductCategory(categoryId, page, limit, searchQuery = '%%') {
 
         const pageNumber = parseInt(page) || 1;
@@ -127,7 +238,12 @@ class ProductRepo {
             const data = await product.findAll({
                 where: {
                     IsActive: true
-                }, include: [Brand, Category, Media]
+                },
+                include: [Brand, Category, Media],
+                limit: 16, // You can adjust the limit as needed
+                order: [
+                    ['createdAt', 'DESC']
+                ]
             })
             if (data) { return data; }
             else {
@@ -220,7 +336,7 @@ class ProductRepo {
                         : categoryId
                 });
             }
-            
+
             if (brandId) {
                 whereCondition[Sequelize.Op.and].push({
                     BrandId: Array.isArray(brandId)

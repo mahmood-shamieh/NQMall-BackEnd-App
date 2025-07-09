@@ -4,6 +4,7 @@ const ResponseModel = require("../models/response.model");
 const MyLogger = require("../util/logging.utility");
 const ProductNotExist = require('../exceptions/ProductNotExist');
 const CreateProductFailure = require('../exceptions/CreateProductFailure');
+const ProductFailure = require('../exceptions/ProductFailure');
 
 
 
@@ -22,6 +23,30 @@ function removeIndexesFromProductDetails(products) {
     return products;
 }
 class ProductController {
+    static async uploadProductFile(req, res) {
+        const lang = req.headers.lang;
+        const file = req.file;
+
+
+        try {
+            productRepo.uploadProductFileProcess(file);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'processing' : "قيد المعالجة", null);
+            // MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
+            console.log(error);
+            
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            if (error instanceof ProductFailure) {
+                temp = ResponseModel.getServerSideError(lang === "en" ? "Error Fetching Products" : "مشكلة في جلب المنتجات", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else {
+                // MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            res.status(500).json(temp);
+        }
+
+    }
     static async getProductCategory(req, res) {
         const lang = req.headers.lang;
         const categoryId = req.params.id;
