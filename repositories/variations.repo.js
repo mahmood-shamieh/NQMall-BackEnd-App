@@ -7,6 +7,9 @@ const VariationNotExist = require("../exceptions/VariationNotExist");
 const CreateVariationFailure = require("../exceptions/CreateVariationFailure");
 const VariationFailure = require("../exceptions/VariationFailure");
 const { where } = require("sequelize");
+const Product = require("../models/product.model");
+const Attribute = require("../models/attribute.model");
+const Media = require("../models/media.model");
 
 
 
@@ -79,7 +82,7 @@ class VariationsRepo {
     }
     static async deleteAllVariationsAndItsLinks(productId, { transaction } = {}) {
         try {
-            const temp = transaction ? await Variations.destroy( {
+            const temp = transaction ? await Variations.destroy({
                 where: {
                     productId: productId
                 }, transaction: transaction
@@ -89,8 +92,67 @@ class VariationsRepo {
                         productId: productId
                     }
                 });
-           console.log(temp)
-           return true;
+            console.log(temp)
+            return true;
+        } catch (error) {
+            if (error.name === "SequelizeForeignKeyConstraintError")
+                throw new CreateVariationFailure()
+            else
+                throw error
+        }
+    }
+    static async getVariationByProductIdAndVariationId(variationId, productId, { transaction } = {}) {
+        try {
+            let whereCondition = { Id: variationId };
+            if (productId) {
+                whereCondition.productId = productId;
+            }
+            const temp = transaction ?
+                await Variations.findOne({
+                    where: whereCondition,
+                    transaction, include: [
+                        {
+                            model: Product,
+                            include: [
+                                Media
+                            ]
+                        },
+                        {
+                            model: ProductVariationValues,
+                            include: [
+                                {
+                                    model: Values, include: [
+                                        Attribute
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                })
+                : await Variations.findOne({
+                    where: whereCondition, include: [
+                        {
+                            model: Product,
+                            include: [
+                                Media
+                            ]
+                        },
+                        {
+                            model: ProductVariationValues,
+                            include: [
+                                {
+                                    model: Values, include: [
+                                        Attribute
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+            if (!temp) {
+                throw new VariationNotExist()
+            }
+            return { ...temp.dataValues, Values: temp.dataValues.product_variation_values.map((e) => e.value) };
         } catch (error) {
             if (error.name === "SequelizeForeignKeyConstraintError")
                 throw new CreateVariationFailure()
@@ -99,7 +161,7 @@ class VariationsRepo {
         }
     }
 
-    static async edit(body) {
+    static async edit(body, { transaction } = {}) {
         let insertData = {
             "Price": body.Price,
             "Stock": body.Stock,
@@ -108,25 +170,43 @@ class VariationsRepo {
 
         };
         try {
-            const data = await Variations.findOne({
+            const data = transaction ? await Variations.findOne({
+                transaction,
+                where: {
+                    Id: body.Id
+                }
+            }) : await Variations.findOne({
                 where: {
                     Id: body.Id
                 }
             });
             if (data && data.length !== 0) {
-                const temp = await Variations.update(insertData, {
+                const temp = transaction ? await Variations.update(insertData, {
+                    transaction,
+                    where: {
+                        Id: body.Id
+                    }
+                }) : await Variations.update(insertData, {
                     where: {
                         Id: body.Id
                     }
                 });
                 if (temp) {
-                    const data = await Variations.findOne({
+                    const data = transaction ? await Variations.findOne({
+                        transaction,
+                        where: {
+                            Id: body.Id
+                        }
+                    }) : await Variations.findOne({
                         where: {
                             Id: body.Id
                         }
                     });
                     let createdValues = data.dataValues;
                     createdValues.IsActive = !!createdValues.IsActive;
+                    // if (transaction) {
+                    //     await transaction.commit();
+                    // }
                     return createdValues;
                 }
                 else {
@@ -136,6 +216,9 @@ class VariationsRepo {
                 throw new VariationNotExist()
             }
         } catch (error) {
+            // if (transaction) {
+            //     await transaction.rollback();
+            // }
             throw error
         }
     }
@@ -147,7 +230,7 @@ class VariationsRepo {
                 {
                     where: {
                         Id: id
-                    }
+                    } 
                 }
             );
             if (deletedItem) {

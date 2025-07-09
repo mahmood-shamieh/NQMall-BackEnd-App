@@ -12,6 +12,11 @@ const ResponseModel = require('../models/response.model');
 const EmailUsed = require('../exceptions/EmailUsed');
 const PhoneNumberUsed = require('../exceptions/PhoneNumberUsed');
 const UserNotFound = require('../exceptions/UserNotExists');
+const NotificationService = require('../services/notification.service');
+const ApplicationTopics = require('../util/Application_topics');
+const AdminPrev = require('../models/admin_prev.model');
+const Section = require('../models/section.model');
+const AppConfig = require('../models/app_config');
 class UserRepo {
     static async addUser(body) {
         const transaction = await sequelize.transaction(); // Start transaction
@@ -60,7 +65,54 @@ class UserRepo {
 
         }
     }
-    static async logIn(body) {
+    static async AddAdmin(body) {
+        const transaction = await sequelize.transaction(); // Start transaction
+        try {
+            const userDate = {
+                Email: body.Email,
+                PasswordHash: await PasswordEncryptionUtility.encrypt(body.Password),
+                FullName: body.FullName,
+                Address: body.Address,
+                PhoneNumber: body.PhoneNumber,
+                Role: "admin",
+
+            }
+            const validateEmail = await User.findOne({
+                where: {
+                    Email: userDate.Email
+                }
+            })
+            if (validateEmail) {
+                throw new EmailUsed();
+            }
+            const validatePhoneNumber = await User.findOne({
+                where: {
+                    PhoneNumber: userDate.PhoneNumber
+                }
+            })
+            if (validatePhoneNumber) {
+                throw new PhoneNumberUsed();
+            }
+
+            const temp = await user.create(userDate, { transaction });
+            const token = TokenUtility.generateSecurityToken({
+                Id: temp.Id,
+            });
+            const updatedUser = { ...temp.dataValues, Token: token }
+            const finalUserData = await User.update(updatedUser, {
+                where: {
+                    Id: updatedUser.Id
+                }, transaction
+            })
+            await transaction.commit();
+            return { ...updatedUser };
+        } catch (error) {
+            await transaction.rollback()
+            throw error;
+
+        }
+    }
+    static async logIn(body,lang) {       
         try {
             const userDate = {
                 Email: body.username,
@@ -72,7 +124,7 @@ class UserRepo {
                     [Sequelize.Op.or]: {
                         PhoneNumber: userDate.PhoneNumber,
                         Email: userDate.Email
-                    }
+                    },
                 }
             })
 
@@ -84,13 +136,40 @@ class UserRepo {
                 const token = TokenUtility.generateSecurityToken({
                     Id: validateUser.Id,
                 });
-                const updatedUser = { ...validateUser.dataValues, Token: token }
+
+                const updatedUser = {
+                    ...validateUser.dataValues, Token: token, FcmToken: body.fcmToken, Lang: lang
+                }
+                if (updatedUser.FcmToken != null && updatedUser.FcmToken != "") {
+                    if (updatedUser.Role === "admin") {
+                        NotificationService.subscribeToTopic([updatedUser.FcmToken], ApplicationTopics.admins);
+                    }
+                    else {
+                        NotificationService.subscribeToTopic([updatedUser.FcmToken], ApplicationTopics.users);
+                    }
+                }
+
                 const finalUserData = await User.update(updatedUser, {
                     where: {
                         Id: updatedUser.Id
-                    }
-                })
-                return { ...updatedUser };
+                    },
+                });
+
+
+                const appConfig = await AppConfig.findAll();
+                const finalAppConfig = appConfig.map(item => item.dataValues);
+
+                if (updatedUser.Role === "admin") {
+                    const finalUser = await User.findOne({
+                        where: {
+                            Id: updatedUser.Id
+                        }, include: [{ model: AdminPrev, include: [{ model: Section }] }]
+                    })
+                    return { ...finalUser.dataValues, appConfig: finalAppConfig[0] };
+                } else {
+                    return { ...updatedUser, appConfig: finalAppConfig[0] };
+                }
+
             }
             else {
                 return false

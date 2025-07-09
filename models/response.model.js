@@ -17,6 +17,8 @@ class ResponseModel {
     static getServerSideError = (message,data) => new ResponseModel(500, message, data);
     static getDataConflictError = (message,data) => new ResponseModel(409, message, data);
     static getNotFoundResponse = (message,data) => new ResponseModel(204, message, data);
+    static getForbiddenResponse = (message,data) => new ResponseModel(403, message, data);
+    static getUnauthorizedResponse = (message,data) => new ResponseModel(401, message, data);
 }
 
 module.exports = ResponseModel

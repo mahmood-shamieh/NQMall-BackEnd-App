@@ -110,8 +110,10 @@ class ProductController {
         const page = req.body.page;
         const limit = req.body.limit;
         const searchQuery = req.body.searchQuery;
+        const categoryId = req.body.categoryId;
+        const brandId = req.body.brandId;
         try {
-            const data = await productRepo.getAllProduct(productId, page, limit, searchQuery);
+            const data = await productRepo.getAllProduct(productId, page, limit, searchQuery,categoryId,brandId);
             const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Products Are' : "المنتجات هي", data);
             MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             res.status(200).json(temp);

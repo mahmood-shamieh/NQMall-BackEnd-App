@@ -41,6 +41,7 @@ class ValuesController {
             MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             res.status(200).json(temp);
         } catch (error) {
+            console.log(error);
             let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
             if (error instanceof VariationNotExist) {
                 temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Variations not exist" : "هذه التشكيلة غير موجودة", error)

@@ -71,7 +71,7 @@ const Product = sequelize.define('products', {
 
 }, {
     sequelize, // This is your Sequelize instance
-    modelName: 'Products',
+    modelName: 'products',
     timestamps: true, // Enable Sequelize to automatically manage createdAt and updatedAt
     createdAt: 'CreatedAt', // Customize the column name for createdAt
     updatedAt: 'UpdatedAt', // Customize the column name for updatedAt

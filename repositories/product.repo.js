@@ -163,28 +163,70 @@ class ProductRepo {
             throw error
         }
     }
-    static async getAllProduct(productId, page, limit, searchQuery) {
+    static async getAllProduct(productId, page, limit, searchQuery, categoryId, brandId) {
         const pageNumber = parseInt(page) || 1;
         const perPage = parseInt(limit) || 10;
         const offset = (pageNumber - 1) * perPage;
-        let whereCondition;
+        let whereCondition = {};
         if (productId) {
             whereCondition = {
                 Id: productId
             };
         } else {
-            if (searchQuery) {
-                whereCondition = {
-                    [Sequelize.Op.or]: [
-                        { NameAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
-                        { NameEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
-                        { DescriptionAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
-                        { DescriptionEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
-                        { DetailsAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
-                        { DetailsAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
 
-                    ]
-                };
+            // if (searchQuery) {
+            //     whereCondition = {
+            //         [Sequelize.Op.or]: [
+            //             { NameAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //             { NameEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //             { DescriptionAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //             { DescriptionEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //             { DetailsAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //             { DetailsAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+            //         ]
+            //     };
+            // }
+            const searchConditions = [];
+
+            if (searchQuery) {
+                searchConditions.push(
+                    { NameAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+                    { NameEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+                    { DescriptionAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+                    { DescriptionEn: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+                    { DetailsAr: { [Sequelize.Op.like]: `%${searchQuery}%` } },
+                    { DetailsEn: { [Sequelize.Op.like]: `%${searchQuery}%` } }
+                );
+            }
+            if (searchConditions.length > 0) {
+                whereCondition[Sequelize.Op.and] = [
+                    { [Sequelize.Op.or]: searchConditions }
+                ];
+            } else {
+                whereCondition[Sequelize.Op.and] = [];
+            }
+
+            // Add AND filters for Category and Brand if present
+            // if (categoryId) {
+            //     whereCondition[Sequelize.Op.and].push({ CategoryId: categoryId });
+            // }
+            // if (brandId) {
+            //     whereCondition[Sequelize.Op.and].push({ BrandId: brandId });
+            // }
+            if (categoryId) {
+                whereCondition[Sequelize.Op.and].push({
+                    CategoryId: Array.isArray(categoryId)
+                        ? { [Sequelize.Op.in]: categoryId }
+                        : categoryId
+                });
+            }
+            
+            if (brandId) {
+                whereCondition[Sequelize.Op.and].push({
+                    BrandId: Array.isArray(brandId)
+                        ? { [Sequelize.Op.in]: brandId }
+                        : brandId
+                });
             }
         }
 
@@ -216,8 +258,8 @@ class ProductRepo {
                 throw new ProductFailure()
             }
         } catch (error) {
-            // console.log(error);
-            
+            console.log(error);
+
             throw error
         }
 

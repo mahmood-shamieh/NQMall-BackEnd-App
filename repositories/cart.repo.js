@@ -10,14 +10,173 @@ const Product = require("../models/product.model");
 const Media = require("../models/media.model");
 const CartNotExist = require("../exceptions/CartNotExist");
 const VariationNotExist = require("../exceptions/VariationNotExist");
-const CreateCartFailure = require("../exceptions/CreateCartFailure");
+const CreateCartFailure = require("../exceptions/CreateCartFailure"); 
+const Attribute = require("../models/attribute.model");
 
 
 
 
 
 class CartRepo {
-    static async addToCart(userId,body) {
+    static async emptyCart(body, { transaction } = {}) {
+        try {
+            const userId = body.userId;
+            const userCart = transaction != null ? await Cart.findOne({
+                where: { userId: userId }, transaction
+            }) : await Cart.findOne({
+                where: { userId: userId }
+            });
+
+            if (!userCart) {
+                throw new CartNotExist();
+            }
+
+            transaction != null ? await CartItem.destroy({
+                where: { cartId: userCart.Id }, transaction
+            }) : await CartItem.destroy({
+                where: { cartId: userCart.Id }
+            });
+
+            const updatedCart = transaction != null ? await Cart.findOne({
+                where: { userId: userId },
+                transaction,
+                include: [
+                    {
+                        model: CartItem,
+                        include: [
+                            {
+                                model: Variations,
+                                include: [
+                                    {
+                                        model: ProductVariationValues,
+                                        include: [
+                                            {
+                                                model: Values,
+                                                include: [Attribute]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            { model: Product, include: [Media] }
+                        ]
+                    }
+                ]
+            }) : await Cart.findOne({
+                where: { userId: userId },
+                include: [
+                    {
+                        model: CartItem,
+                        include: [
+                            {
+                                model: Variations,
+                                include: [
+                                    {
+                                        model: ProductVariationValues,
+                                        include: [
+                                            {
+                                                model: Values,
+                                                include: [Attribute]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            { model: Product, include: [Media] }
+                        ]
+                    }
+                ]
+            });
+
+            let data = { ...updatedCart.dataValues };
+            data.CartItems = data.CartItems.map((cartItem) => ({
+                ...cartItem.dataValues,
+                variation: {
+                    ...cartItem.variation.dataValues,
+                    Values: cartItem.variation.product_variation_values.map((value) => value.value)
+                }
+            }));
+
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async removeFromCartByVariationId(user, body) {
+        try {
+            const carItems = body.variations
+            const userId = user.Id
+            const userCart = await Cart.findOne({
+                where: {
+                    userId: userId
+                }
+            })
+            if (userCart) {
+                for (let index = 0; index < carItems.length; index++) {
+                    await CartItem.destroy({
+                        where: {
+                            variationId: carItems[index],
+                            cartId: userCart.Id
+                        }
+                    })
+                }
+                const cartWithVariation = await Cart.findOne({
+                    where: {
+                        userId: userId
+                    },
+                    include: [
+                        {
+                            model: CartItem,
+                            include: [
+                                {
+                                    model: Variations,
+                                    include: [
+                                        {
+                                            model: ProductVariationValues,
+                                            include: [
+                                                {
+                                                    model: Values,
+                                                    include: [
+                                                        Attribute
+                                                    ]
+                                                }
+                                            ],
+                                        },
+                                    ],
+                                },
+                                { model: Product, include: [Media] }]
+                        }],
+                })
+                if (!cartWithVariation) {
+                    throw new VariationNotExist()
+                }
+                let data = { ...cartWithVariation.dataValues };
+                const tempCartItems = data.CartItems.map((cartItem) => ({
+                    ...cartItem.dataValues, variation: {
+                        ...cartItem.variation.dataValues, Values: cartItem.variation.product_variation_values.map((value) => {
+                            return ({
+                                Id: value.value.Id,
+                                ValueAr: value.value.ValueAr,
+                                ValueEn: value.value.ValueEn,
+                                HoverImageAr: value.value.HoverImageAr,
+                                HoverImageEn: value.value.HoverImageEn,
+                            })
+                        }),
+                    }
+                }));
+                data.CartItems = tempCartItems
+                return data;
+            }
+            else throw new CartNotExist()
+        } catch (error) {
+            throw error
+        }
+
+
+
+    }
+    static async addToCart(userId, body) {
         const transaction = await sequelize.transaction(); // Start transaction
         try {
             let cartId = null;
@@ -50,19 +209,28 @@ class CartRepo {
                 where: {
                     userId: userId
                 },
-                include: [{
-                    model: CartItem, include: [{
-                        model: Variations,
+                include: [
+                    {
+                        model: CartItem,
                         include: [
                             {
-                                model: ProductVariationValues,
+                                model: Variations,
                                 include: [
-                                    Values
+                                    {
+                                        model: ProductVariationValues,
+                                        include: [
+                                            {
+                                                model: Values,
+                                                include: [
+                                                    Attribute
+                                                ]
+                                            }
+                                        ],
+                                    },
                                 ],
                             },
-                        ],
-                    }, { model: Product, include: [Media] }]
-                }],
+                            { model: Product, include: [Media] }]
+                    }],
                 transaction
             })
             await transaction.commit(); // Commit transaction only after all queries finish            
@@ -91,9 +259,9 @@ class CartRepo {
 
 
     }
-    static async removeFromCart(user,body) {
+    static async removeFromCart(user, body) {
         try {
-            const carItems = body.variations
+            const carItems = body.cartItems
             const userId = user.Id
             const userCart = await Cart.findOne({
                 where: {
@@ -104,7 +272,7 @@ class CartRepo {
                 for (let index = 0; index < carItems.length; index++) {
                     await CartItem.destroy({
                         where: {
-                            variationId: carItems[index],
+                            Id: carItems[index],
                             cartId: userCart.Id
                         }
                     })
@@ -113,19 +281,28 @@ class CartRepo {
                     where: {
                         userId: userId
                     },
-                    include: [{
-                        model: CartItem, include: [{
-                            model: Variations,
+                    include: [
+                        {
+                            model: CartItem,
                             include: [
                                 {
-                                    model: ProductVariationValues,
+                                    model: Variations,
                                     include: [
-                                        Values
+                                        {
+                                            model: ProductVariationValues,
+                                            include: [
+                                                {
+                                                    model: Values,
+                                                    include: [
+                                                        Attribute
+                                                    ]
+                                                }
+                                            ],
+                                        },
                                     ],
                                 },
-                            ],
-                        }, { model: Product, include: [Media] }]
-                    }],
+                                { model: Product, include: [Media] }]
+                        }],
                 })
                 if (!cartWithVariation) {
                     throw new VariationNotExist()
@@ -134,13 +311,13 @@ class CartRepo {
                 const tempCartItems = data.CartItems.map((cartItem) => ({
                     ...cartItem.dataValues, variation: {
                         ...cartItem.variation.dataValues, Values: cartItem.variation.product_variation_values.map((value) => {
-                            return ({
+                            return value.value /*  ({
                                 Id: value.value.Id,
                                 ValueAr: value.value.ValueAr,
                                 ValueEn: value.value.ValueEn,
                                 HoverImageAr: value.value.HoverImageAr,
                                 HoverImageEn: value.value.HoverImageEn,
-                            })
+                            }) */
                         }),
                     }
                 }));
@@ -164,19 +341,28 @@ class CartRepo {
                 where: {
                     userId: userId
                 },
-                include: [{
-                    model: CartItem, include: [{
-                        model: Variations,
+                include: [
+                    {
+                        model: CartItem,
                         include: [
                             {
-                                model: ProductVariationValues,
+                                model: Variations,
                                 include: [
-                                    Values
+                                    {
+                                        model: ProductVariationValues,
+                                        include: [
+                                            {
+                                                model: Values,
+                                                include: [
+                                                    Attribute
+                                                ]
+                                            }
+                                        ],
+                                    },
                                 ],
                             },
-                        ],
-                    }, { model: Product, include: [Media] }]
-                }],
+                            { model: Product, include: [Media] }]
+                    }],
             })
             if (!cartWithVariation)
                 throw new CartNotExist()
@@ -185,13 +371,14 @@ class CartRepo {
                 const tempCartItems = data.CartItems.map((cartItem) => ({
                     ...cartItem.dataValues, variation: {
                         ...cartItem.variation.dataValues, Values: cartItem.variation.product_variation_values.map((value) => {
-                            return ({
+                            return value.value;
+                            /* ({
                                 Id: value.value.Id,
-                                ValueAr: value.value.ValueAr,
+                                ValueAr: value.value.ValueAr, 
                                 ValueEn: value.value.ValueEn,
                                 HoverImageAr: value.value.HoverImageAr,
                                 HoverImageEn: value.value.HoverImageEn,
-                            })
+                            }) */
                         }),
                     }
                 }));

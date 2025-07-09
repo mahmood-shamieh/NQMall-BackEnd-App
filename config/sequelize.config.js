@@ -11,6 +11,7 @@ const sequelize =
             host: '127.0.0.1',
             dialect: 'mysql',
             logging: false,
+            // logging: console.log, 
             pool: {
                 max: 30,
                 min: 10,

@@ -18,6 +18,9 @@ const valuesRoute = require('./routes/values.routes');
 const variationRoute = require('./routes/variation.routes');
 const productVariationValues = require('./routes/productVariationValues.routes');
 const cartRoute = require('./routes/cart.routes');
+const orderRoutes = require('./routes/order.routes');
+const orderStatusRoutes = require('./routes/orderStatus.routes');
+const notificationRoutes = require('./routes/notification.routes');
 // 
 
 const User = require('./models/user.model')
@@ -32,18 +35,40 @@ const Values = require('./models/values.model')
 const Variations = require('./models/vairation.model')
 const ProductVariationValues = require("./models/productVariationValues.model")
 const CartItem = require("./models/cartItem.model")
+const OrderItem = require("./models/orderItem.model")
+const OrderStatus = require("./models/orderStatus.model")
+const Order = require("./models/order.model")
+const Section = require("./models/section.model")
+const AdminPrev = require("./models/admin_prev.model")
+const AppConfig = require("./models/app_config")
 const { sequelize } = require('./config/sequelize.config')
 
 // relations
 User.hasOne(Cart);
 User.hasMany(Rating);
+User.hasMany(AdminPrev);
+Section.hasMany(AdminPrev);
 Attribute.hasMany(Values, { onDelete: "CASCADE" });
 Values.hasMany(ProductVariationValues, { onDelete: "CASCADE" });
 Variations.hasMany(ProductVariationValues, { onDelete: "CASCADE" });
+Variations.hasMany(OrderItem, { onDelete: "CASCADE" });
+Product.hasMany(OrderItem, { onDelete: "CASCADE" });
+Order.hasMany(OrderItem, { onDelete: "CASCADE" });
+User.hasMany(Order, { onDelete: "CASCADE" });
+OrderStatus.hasMany(Order);
 User.hasMany(Product);
 
 Rating.belongsTo(User);
 Cart.belongsTo(User);
+AdminPrev.belongsTo(User);
+AdminPrev.belongsTo(Section);
+
+OrderItem.belongsTo(Variations);
+OrderItem.belongsTo(Product);
+Order.belongsTo(OrderStatus);
+Order.belongsTo(User);
+
+
 CartItem.belongsTo(Cart)
 CartItem.belongsTo(Product)
 CartItem.belongsTo(Variations)
@@ -95,6 +120,10 @@ app.use('/attributesValues', valuesRoute);
 app.use('/variations', variationRoute);
 app.use('/variationsLinks', productVariationValues);
 app.use('/carts', cartRoute);
+app.use('/orders', orderRoutes);
+app.use('/orderStatus', orderStatusRoutes);
+app.use('/notifications', notificationRoutes);
+
 
 
 

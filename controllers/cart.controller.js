@@ -53,6 +53,30 @@ class CartController {
             res.status(500).json(temp);
         }
 
+    }static async removeFromCartByVariationId(req, res) {
+        // console.log(req.body);
+        const lang = req.headers.lang
+
+        try {
+            const data = await CartRepo.removeFromCartByVariationId(req.user, req.body);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Cart is' : "السلة هي", data);
+            MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
+
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            if (error instanceof CartNotExist) {
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Cart not exist" : "السلة غير موجودة", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else if (error instanceof VariationNotExist) {
+                temp = ResponseModel.getNotFoundResponse(lang === "en" ? "Variations not exist" : "هذه التشكيلة غير موجودة", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            } else {
+                MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            res.status(500).json(temp);
+        }
+
     }
     static async getUserCart(req, res) {
         const lang = req.headers.lang

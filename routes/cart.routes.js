@@ -12,6 +12,7 @@ const cartRouter = express.Router();
 cartRouter.put('/add', (req, res, next) => AuthMiddleWare.Auth(req, res, next, Cart.name, ActionsUtility.add), CartController.addToCart);
 cartRouter.get('/', (req, res, next) => AuthMiddleWare.Auth(req, res, next, Cart.name, ActionsUtility.read), CartController.getUserCart);
 cartRouter.delete('', (req, res, next) => AuthMiddleWare.Auth(req, res, next, Cart.name, ActionsUtility.delete), CartController.removeFromCart);
+cartRouter.delete('/variation', (req, res, next) => AuthMiddleWare.Auth(req, res, next, Cart.name, ActionsUtility.delete), CartController.removeFromCartByVariationId);
 // cartRouter.delete('/delete/:id', categoryController.deleteCategory);
 // cartRouter.get('/getFormat', categoryController.getFormat);
 // cartRouter.get('/getAll', categoryController.getAllCategories);

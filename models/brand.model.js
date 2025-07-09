@@ -52,8 +52,8 @@ const Brand = sequelize.define('brands', {
         timestamps: true,
         createdAt: 'CreatedAt',
         updatedAt: 'UpdatedAt',
-        tableName: "brand",
-        modelName: "Brand"
+        tableName: "brands",
+        modelName: "brands"
     }
 );
 

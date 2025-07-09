@@ -15,6 +15,14 @@ const User = sequelize.define('users', {
         type: DataTypes.STRING(255),
         allowNull: true,
         // unique: true,
+    }, FcmToken: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        // unique: true,
+    }, Lang: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        // unique: true,
     },
     PasswordHash: {
         type: DataTypes.STRING(255),

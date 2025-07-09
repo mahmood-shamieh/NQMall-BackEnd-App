@@ -32,5 +32,6 @@ productRouter.get("/productsViewHomePage", productController.getProductForViewHo
 productRouter.get("/productsCategory/:id/:page/:searchQuery?", productController.getProductCategory);
 productRouter.get("/productBrand/:id/:page/:searchQuery?", productController.getProductBrand);
 productRouter.get("/:id?", productController.getProductDetails);
+productRouter.post("/", productController.getAllProductDetails);
 
 module.exports = productRouter;

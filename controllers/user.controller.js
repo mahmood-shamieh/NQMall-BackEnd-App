@@ -15,7 +15,7 @@ class UserController {
         const body = req.body;
         const lang = req.headers.lang || "en";
         try {
-            const addedUser = await userRepo.logIn(body);
+            const addedUser = await userRepo.logIn(body,lang);
             if (addedUser === false) {
                 const temp = new ResponseModel(403, lang === "en" ? "Forbidden" : "غير مسموح بالدخول", null);
                 MyLogger.info(`${temp.code}|${temp.message}|${temp.data}`)
@@ -40,6 +40,30 @@ class UserController {
         const lang = req.headers.lang || 'en'
         try {
             const addedUser = await userRepo.addUser(body);
+            const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Welcome' : "أهلاً", addedUser);
+            MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            res.status(200).json(temp);
+        } catch (error) {
+            let temp = ResponseModel.getServerSideError(lang === "en" ? "Unknown Error Happened" : "مشكلة غير معروفة", error);
+            if (error instanceof EmailUsed) {
+                temp = ResponseModel.getDataConflictError(lang === "en" ? "Email used before" : "الإيميل مستخدم من قبل", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            else if (error instanceof PhoneNumberUsed) {
+                temp = ResponseModel.getDataConflictError(lang === "en" ? "Phone Number used before" : "رقم الموبايل مستخدم من قبل", error)
+                MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            else {
+                MyLogger.error(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
+            }
+            res.status(500).json(temp);
+        }
+
+    }static async createAdmin(req, res) {
+        const body = req.body;
+        const lang = req.headers.lang || 'en'
+        try {
+            const addedUser = await userRepo.AddAdmin(body);
             const temp = ResponseModel.getSuccessResponse(lang === "en" ? 'Welcome' : "أهلاً", addedUser);
             MyLogger.info(`${temp.code}|${temp.message}|${JSON.stringify(temp.data)}`)
             res.status(200).json(temp);
