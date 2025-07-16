@@ -22,6 +22,7 @@ const User = sequelize.define('users', {
     }, Lang: {
         type: DataTypes.STRING(255),
         allowNull: false,
+        defaultValue: "ar"  
         // unique: true,
     },
     PasswordHash: {

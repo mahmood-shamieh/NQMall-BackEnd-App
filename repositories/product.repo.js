@@ -58,8 +58,8 @@ class ProductRepo {
                             SalePrice: row.salesPrice == 'null' || row.salesPrice == '' ? null : row.salesPrice,
                             DetailsAr: tempDetailsArMap,
                             DetailsEn: tempDetailsEnMap,
-                            BrandId: row.brand == 'null' || row.brand == '' ? null : row.brand,
-                            CategoryId: row.category == 'null' || row.category == '' ? null : row.category,
+                            brandId: row.brand == 'null' || row.brand == '' ? null : row.brand,
+                            categoryId: row.category == 'null' || row.category == '' ? null : row.category,
                         };
                         let addedProduct = await Product.create(element, { transaction });
                         addedProduct = addedProduct.get({ plain: true });
